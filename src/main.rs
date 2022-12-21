@@ -1,35 +1,34 @@
+use rman::{ArgParseErr, Args};
 use std::{env, process};
 
 fn main() {
-    let mut args: Vec<String> = env::args().collect();
-    if args.len() != 4 {
-        eprintln!("Not enough arguments");
-        process::exit(1);
-    }
+    let args = match Args::parse(env::args().collect()) {
+        Ok(args) => args,
+        Err(err) => match err {
+            ArgParseErr::NotEnoughArgs => {
+                eprintln!("Not enough arguments");
+                process::exit(1);
+            }
+            ArgParseErr::InvalidBalance(msg) => {
+                eprintln!("{msg}");
+                process::exit(1);
+            }
+            ArgParseErr::InvalidRisk(msg) => {
+                eprintln!("{msg}");
+                process::exit(1);
+            }
+            ArgParseErr::InvalidStopLoss(msg) => {
+                eprintln!("{msg}");
+                process::exit(1);
+            }
+        },
+    };
 
-    // parse balance
-    let balance: u32 = args[1]
-        .parse()
-        .expect("Please provide a valid number for balance");
+    let lot_size = rman::calculate_lot_size(args.balance, args.risk, args.stop_loss);
 
-    // parse risk
-    let risk: f32;
-    if args[2].contains('%') {
-        args[2].pop();
-        risk = args[2]
-            .parse()
-            .expect("Please provide a valid number for risk");
-    } else {
-        eprintln!("% sign required");
-        process::exit(1);
-    }
-
-    // parse stop loss
-    let stop_loss: u32 = args[3]
-        .parse()
-        .expect("Please provide a valid number for stop loss");
-
-    println!("balance: {}", balance);
-    println!("risk: {}%", risk);
-    println!("stop loss: {}", stop_loss);
+    println!("balance: {}", args.balance);
+    println!("risk: {}%", args.risk);
+    println!("stop loss: {}", args.stop_loss);
+    println!("_______________________________");
+    println!("lot size for this trade: {lot_size}");
 }
